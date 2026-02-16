@@ -46,6 +46,7 @@ if(!isAdmin(req)){
        }
 }
 export async function getProducts(req,res){
+    console.log("Fetching All products");
     try{
         const products = await Product.find()
         res.json(products);
