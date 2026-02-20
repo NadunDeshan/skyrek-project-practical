@@ -1,3 +1,4 @@
+import axios from "axios";
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -50,7 +51,8 @@ export function loginUser(req,res){
                             firstName : user.firstName,
                             lastName : user.lastName,
                             role : user.role,
-                            isEmailVerified : user.isEmailVerified
+                            isEmailVerified : user.isEmailVerified,
+                            image:user.image
                         },
                         process.env.JWT_SECRET
                     )
@@ -62,7 +64,8 @@ export function loginUser(req,res){
                             firstName:user.firstName,
                             lastName: user.lastName,
                             role: user.role,
-                            isEmailVerified: user.isEmailVerified
+                            isEmailVerified: user.isEmailVerified,
+                            image:user.image
                         }
                     })
                 }else{
@@ -94,4 +97,97 @@ export function isCustomer(req){
         return false;
     }
     return true;
+}
+export function getUser(req,res){
+    if(req.user == null){
+        res.status(401).json({
+            message : "Unauthorized user"
+        });
+        return;
+    }else{
+        res.json(req.user);
+    }
+}
+export async function googleLogin(req,res){
+    const token = req.body.token;
+
+    if(token == null){
+        res.status(401).json({
+            message : "Token is required"
+        });
+        return;
+    }
+    try{
+        const googleResponse= await axios.get("https://www.googleapis.com/oauth2/v3/userinfo",{
+        headers : {
+            Authorization : `Bearer ${token}`
+        }
+    }
+    )
+    const googleUser = googleResponse.data;
+    const user = await User.findOne({email : googleUser.email});
+    
+   if(user == null){
+    const newUser = new User({
+        email : googleUser.email,
+        firstName : googleUser.given_name,
+        lastName : googleUser.family_name,
+        password : "abc",
+        isEmailVerified : googleUser.email_verified,
+        image : googleUser.picture,
+    })
+        
+    let savedUser = await newUser.save()
+
+    const jwttoken = jwt.sign({
+        email : savedUser.email,
+        firstName : savedUser.firstName,
+        lastName : savedUser.lastName,
+        role : savedUser.role,
+        isEmailVerified : savedUser.isEmailVerified,
+        image:savedUser.image
+    },process.env.JWT_SECRET);
+    res.json({
+        message : "Login successfully",
+        token : jwttoken,
+        user : {
+            email : savedUser.email,
+            firstName : savedUser.firstName,
+            lastName : savedUser.lastName,
+            role : savedUser.role,
+            isEmailVerified : savedUser.isEmailVerified,
+            image:savedUser.image
+        }
+    });
+    return
+    
+    }else{
+        const jwtToken = jwt.sign({
+            email : user.email,
+            firstName : user.firstName,
+            lastName : user.lastName,
+            role : user.role,
+            isEmailVerified : user.isEmailVerified,
+            image:user.image
+        },process.env.JWT_SECRET);
+        res.json({
+            message : "Login successfully",
+            token : jwtToken,
+            user : {
+                email : user.email,
+                firstName : user.firstName,
+                lastName : user.lastName,
+                role : user.role,
+                isEmailVerified : user.isEmailVerified,
+                image:user.image
+            }
+        });
+        return;
+    }  
+    }catch(err){
+        res.status(500).json({
+            message : "Failed to login with google"
+        })
+        return;
+    }
 }
