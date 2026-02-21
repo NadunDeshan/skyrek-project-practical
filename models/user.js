@@ -34,7 +34,7 @@ const userScchema = mongoose.Schema(
         },
         image : {
             type:String,
-            default: "user.png"
+            default: "/user.png"
         }
     }
 )
