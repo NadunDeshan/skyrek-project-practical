@@ -1,91 +1,172 @@
 import express from "express";
 import mongoose from "mongoose";
 import dns from "node:dns";
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
-import studentRouter from "./routes/studentsRouter.js";
-import User from "./models/user.js";
-import userRouter from "./routes/userRouter.js";
-import jwt from "jsonwebtoken";
-import productRouter from "./routes/productRouter.js";
 import cors from "cors";
 import dotenv from "dotenv";
+import jwt from "jsonwebtoken";
+
+import studentRouter from "./routes/studentsRouter.js";
+import userRouter from "./routes/userRouter.js";
+import productRouter from "./routes/productRouter.js";
 import orderRouter from "./routes/orderRouter.js";
 
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
 
-const app = express()
+const app = express();
 
+/* CORS */
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "https://course-front-end-three.vercel.app",
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
 
+app.options(/.*/, cors());
+
+/* Body parser */
+app.use(express.json());
+
+/* Authentication middleware */
+app.use((req, res, next) => {
+  let token = req.header("Authorization");
+
+  if (!token) {
+    next();
+    return;
+  }
+
+  token = token.replace("Bearer ", "");
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err || decoded == null) {
+      return res.status(401).json({
+        message: "Invalid token, please login again",
+      });
+    }
+
+    req.user = decoded;
+    next();
+  });
+});
+
+/* MongoDB connection */
+const connectionString = process.env.MONGO_URI;
+
+mongoose
+  .connect(connectionString)
+  .then(() => {
+    console.log("Database connected successfully");
+  })
+  .catch((err) => {
+    console.log("Database connection failed", err.message);
+  });
+
+/* Routes */
+app.use("/api/students", studentRouter);
+app.use("/api/users", userRouter);
+app.use("/api/products", productRouter);
+app.use("/api/orders", orderRouter);
+
+/* Server */
+app.listen(5000, () => {
+  console.log("Server is running on port 5000");
+});
+
+// import express from "express";
+// import mongoose from "mongoose";
+// import dns from "node:dns";
+// dns.setServers(["1.1.1.1", "8.8.8.8"]);
+// import studentRouter from "./routes/studentsRouter.js";
+// import User from "./models/user.js";
+// import userRouter from "./routes/userRouter.js";
+// import jwt from "jsonwebtoken";
+// import productRouter from "./routes/productRouter.js";
+// import cors from "cors";
+// import dotenv from "dotenv";
+// import orderRouter from "./routes/orderRouter.js";
+
+// dotenv.config();
+
+// const app = express()
+
+// app.use(
+//   cors({
+//     origin: [
+//       "http://localhost:5173",
+//       "https://course-front-end-three.vercel.app",
+//     ],
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     credentials: true,
+//   })
+// );
 
 
-//code clean setup part
-app.use(express.json())
+
+// //code clean setup part
+// app.use(express.json())
 
 
-//Aythontication part
-app.use(
-    (req,res,next)=>{
-        let token = req.header("Authorization")
+// //Aythontication part
+// app.use(
+//     (req,res,next)=>{
+//         let token = req.header("Authorization")
 
-        if(token != null){
-            token = token.replace("Bearer ","")
-            // console.log(token)
-            jwt.verify(token,process.env.JWT_SECRET,
-                (err,decoded)=>{
-                    if(decoded == null){
-                        res.json(
-                            {
-                                message: "Invalid token please login again"
-                            }
-                        )
-                        return
-                    }else{
-                         req.user = decoded
-                    }
-                }
-            )
-        }next()
+//         if(token != null){
+//             token = token.replace("Bearer ","")
+//             // console.log(token)
+//             jwt.verify(token,process.env.JWT_SECRET,
+//                 (err,decoded)=>{
+//                     if(decoded == null){
+//                         res.json(
+//                             {
+//                                 message: "Invalid token please login again"
+//                             }
+//                         )
+//                         return
+//                     }else{
+//                          req.user = decoded
+//                     }
+//                 }
+//             )
+//         }next()
             
-    }
-        )
+//     }
+//         )
 
-//mongodb link hide in .env file
-const connectionString = process.env.MONGO_URI
+// //mongodb link hide in .env file
+// const connectionString = process.env.MONGO_URI
 
-mongoose.connect(connectionString).then(
-    ()=>{
-        console.log("Database connected successfully")
-    }
-    )
-.catch(
-    (err)=>{
-        console.log("Database connected failed",err.message)
-    }
-)
-//connect student route
-app.use("/api/students",studentRouter) 
-app.use("/api/users",userRouter)
-app.use ("/api/products",productRouter)
-app.use("/api/orders",orderRouter)
-
-// app.delete("/",
-//     (req,res)=>{
-//         console.log("Delete request recived")
+// mongoose.connect(connectionString).then(
+//     ()=>{
+//         console.log("Database connected successfully")
+//     }
+//     )
+// .catch(
+//     (err)=>{
+//         console.log("Database connected failed",err.message)
 //     }
 // )
+// //connect student route
+// app.use("/api/students",studentRouter) 
+// app.use("/api/users",userRouter)
+// app.use ("/api/products",productRouter)
+// app.use("/api/orders",orderRouter)
 
-app.listen(5000,
-    ()=>{
-        console.log("Server is running port 5000")
-    }
-)
+// // app.delete("/",
+// //     (req,res)=>{
+// //         console.log("Delete request recived")
+// //     }
+// // )
+
+// app.listen(5000,
+//     ()=>{
+//         console.log("Server is running port 5000")
+//     }
+// )
