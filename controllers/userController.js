@@ -1,4 +1,4 @@
-import axios from "axios";
+        import axios from "axios";
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -284,17 +284,17 @@ export async function sendOTP(req,res){
         await newOTP.save();
 
         const html = getDesignedEmail({
-        brandName: "ND • Crystal Beauty Clear",
+        brandName: "RIDEX • ACCOUNT RECOVERY",
         accentColor: "#fa812f",
         primaryColor: "#fef3e2",
         secondaryColor: "#393e46",
         otp: otp,              // make sure otp is a string
         minutesValid: 10,
-        supportEmail: "support@nd.com", // optional
+        supportEmail: "support@ridex.com", // optional
         });
 
         await transporter.sendMail({
-        from: `"ND Support" <${process.env.EMAIL_USER}>`,
+        from: `"Ridex Support" <${process.env.EMAIL_USER}>`,
         to: email,
         subject: "Password Reset Verification Code",
         html,
@@ -368,18 +368,21 @@ export async function updateUserData(req,res){
         return;
     }
     try{
-        await User.updateOne({
+        const updateUser = await User.findOneAndUpdate({
             email : req.user.email
         },{
             firstName : req.body.firstName,
             lastName : req.body.lastName,
             image : req.body.image
         
-        });
+        },{new:true}
+    );
         res.json({
-            message : "User data updated successfully"
+            message : "User data updated successfully",
+            user:updateUser,
         });
     }catch(err){
+        console.log(err);
         res.status(500).json({
             message : "Failed to update user data"
         });

@@ -176,6 +176,28 @@ export async function updateOrderStatus(req, res) {
   
 }
 
+export async function getMyOrders(req, res) {
+  if (req.user == null) {
+    res.status(401).json({
+      message: "Unauthorized user",
+    });
+    return;
+  }
+
+  try {
+    const orders = await Order.find({
+      email: req.user.email,
+    }).sort({ date: -1 });
+
+    res.json(orders);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({
+      message: "Failed to fetch user orders",
+    });
+  }
+}
+
 
 
 

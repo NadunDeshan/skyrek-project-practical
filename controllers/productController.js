@@ -132,5 +132,77 @@ try{
     });
 }
 }
+export async function searchProducts(req, res) {
+  try {
+    const query = req.params.query?.trim();
+
+    if (!query) {
+      return res.json([]); // return empty array instead of 400
+    }
+
+    // escape special regex characters (prevents 500 error)
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    const results = await Product.find({
+      $or: [
+        { name: { $regex: escaped, $options: "i" } },
+        { altName: { $regex: escaped, $options: "i" } },
+        { catagory: { $regex: escaped, $options: "i" } }
+      ],
+    }).limit(20);
+
+    res.json(results);
+
+  } catch (err) {
+    console.log("searchProducts error:", err);
+    res.status(500).json({ message: "Failed to search products" });
+  }
+}
+//-------------------------------------------------------------
+// export async function searchProducts(req, res) {
+//   try {
+//     const query = req.params.query;
+
+//     if (!query || query.trim() === "") {
+//       return res.status(400).json({ message: "Search query is required" });
+//     }
+
+//     const q = query.trim();
+
+//     // Search by name / altName / catagory (your schema uses "catagory")
+//     const results = await Product.find({
+//       $or: [
+//         { name: { $regex: q, $options: "i" } },
+//         { altName: { $elemMatch: { $regex: q, $options: "i" } } },
+        
+//       ],
+//     });
+
+//     res.json(results);
+//   } catch (err) {
+//     console.log("searchProducts error:", err.message);
+//     res.status(500).json({ message: "Failed to search products" });
+//   }
+// }
+//-------------------------------------------------------------
+// export async function getProductBySearch(req,res){
+//     try{
+//         const query = req.params.query;
+//         const products = await Product.find(
+//             {
+//                 name : { $regex: query, $options: "i" }
+//             }
+//             );
+//         res.json(products);
+
+//     }catch(err){
+//         console.error(err);
+//         res.status(500).json({
+//             message : "Failed to retrieve product by search"
+//         });
+//     }
+
+// }
+
 
 

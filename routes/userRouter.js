@@ -10,7 +10,7 @@ userRouter.post("/google-login",googleLogin)
 userRouter.get("/all-users",getAllusers)
 userRouter.put("/block/:email",blockOrUnblockUser)
 userRouter.get("/send-otp/:email",sendOTP)
-userRouter.post("/change-password/",changePasswordViaOTP)
+userRouter.post("/change-password",changePasswordViaOTP)
 userRouter.put("/me",updateUserData)
 userRouter.put("/me/password",updatePassword)
 
