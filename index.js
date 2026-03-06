@@ -15,7 +15,18 @@ dotenv.config();
 
 const app = express()
 
-app.use(cors())
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://course-front-end-three.vercel.app",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+
 
 //code clean setup part
 app.use(express.json())
